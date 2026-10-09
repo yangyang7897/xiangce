@@ -65,6 +65,16 @@ jobs:
           name: build-log
           path: build.log
 
+      # 从完整日志里提取真正的错误行，直接显示在 CI 页面，方便截图
+      - name: Extract real error
+        if: failure()
+        run: |
+          echo "===== 磁盘剩余空间 ====="
+          df -h || true
+          echo "===== 日志中的关键错误 ====="
+          grep -n -iE "error:|fatal error|traceback|exception|no such file|cannot find|undefined reference|collect2|command not found|killed" build.log \
+            | grep -v "Error code: 1" | tail -60 || true
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:

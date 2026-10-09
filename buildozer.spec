@@ -28,7 +28,13 @@ android.permissions = READ_EXTERNAL_STORAGE,READ_MEDIA_IMAGES
 
 # 应用最低 / 目标 Android SDK
 android.minapi = 21
-android.api = 34
+android.api = 33
+# 固定 NDK 版本：25b 是 p4a 2024.01 验证最充分的版本
+# （最新的 28c 编译 SDL2/Kivy 原生库有兼容问题）
+android.ndk = 25b
+# 固定 python-for-android 到稳定发布版（默认拉取的开发版不稳定）
+p4a.url = https://github.com/kivy/python-for-android.git
+p4a.branch = release-2024.01.21
 # 只编译 arm64 架构（2019 年以后的手机都支持，构建更快、更省资源）
 android.archs = arm64-v8a
 # 自动接受 Android SDK 许可证（CI 环境无交互，必须设为 True）
