@@ -1,0 +1,72 @@
+name: Build APK
+
+on:
+  push:
+    tags:
+      - 'v*'      # 打 tag（如 v1.0.0）才触发正式构建
+  workflow_dispatch:   # 也可以在 Actions 页面手动点 Run workflow 触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            zip unzip \
+            openjdk-17-jdk \
+            autoconf libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses-dev \
+            libstdc++6 \
+            libffi-dev \
+            libssl-dev \
+            ccache
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install buildozer and cython
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install buildozer cython==0.29.36
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      # 释放磁盘空间（p4a 编译两个架构可能把 14GB 磁盘撑爆）
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost \
+            /usr/local/lib/android/sdk/ndk/30.0.16248370 || true
+          sudo docker image prune -af || true
+          df -h
+
+      - name: Build debug APK
+        run: |
+          set -o pipefail
+          buildozer -v android debug 2>&1 | tee build.log
+
+      # 失败时把完整构建日志传成 artifact，方便定位错误
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lovediary-apk
+          path: bin/*.apk
