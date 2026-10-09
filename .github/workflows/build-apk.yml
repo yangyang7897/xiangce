@@ -8,7 +8,9 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # 必须用 22.04：24.04 的 libtool 2.4.7 删除了老版 libffi 需要的
+    # LT_SYS_SYMBOL_USCORE 宏，会导致 p4a 编译 libffi 失败
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout source
